@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from 'electron'
-import { createWindow } from './window'
+import { MaidelApp } from './app'
 import path from 'path'
 
 // Enable live reload for Electron in development
@@ -14,14 +14,30 @@ if (process.env.NODE_ENV === 'development') {
   }
 }
 
-app.whenReady().then(() => {
-  createWindow()
+const maidelApp = new MaidelApp()
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+app.whenReady().then(async () => {
+  try {
+    await maidelApp.initialize()
+    await maidelApp.createMainWindow()
+  } catch (error) {
+    console.error('Failed to initialize Maidel 2.1:', error)
+    app.quit()
+  }
+
+  app.on('activate', async () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      await maidelApp.createMainWindow()
+    }
   })
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
+
+app.on('before-quit', async () => {
+  await maidelApp.shutdown()
 })
